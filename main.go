@@ -26,5 +26,4 @@ func main() {
 
 	// Start webserver
 	http.ListenAndServe(":"+portString, nil)
-
 }
