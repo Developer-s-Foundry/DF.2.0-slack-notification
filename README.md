@@ -26,7 +26,7 @@ The project is written purely in **Golang** and consumes events on a RabbitMQ qu
 ---
 
 ## 👨‍💻 Team Members
-* **Oluwadarasimi Temitope Shina-kelani ** – Backend Developer (Golang)
+* **Oluwadarasimi Temitope Shina-kelani** – Backend Developer (Golang)
 * **Stephen Basoah Dankyi** – Backend Developer (Golang)
 
 ---
