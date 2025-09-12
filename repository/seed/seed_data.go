@@ -1,0 +1,6 @@
+package seed
+
+
+func Seed() {
+
+}

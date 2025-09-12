@@ -5,13 +5,25 @@ import (
 	"time"
 )
 
+type Task struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Status      string    `json:"status"`
+	Description string    `json:"description,omitempty"`
+	AssignedTo  string    `json:"assigned_to,omitempty"`
+	Expires_at  time.Time `json:"expires_at,omitempty"`
+	CreatedAt   time.Time `json:"created_at,omitempty"`
+	UpdatedAt   time.Time `json:"updated_at,omitempty"`
+}
+
 func (p *PostgresConn) Create() error {
 	query := `
 		CREATE TABLE IF NOT EXISTS tasks (
 			id TEXT PRIMARY KEY,
-			name TEXT,
-			status VARCHAR(100) DEFAULT 'pending',
-			description TEXT,
+			name VARCHAR(100) NOT NULL,
+			status VARCHAR(100) NOT NULL DEFAULT 'pending',
+			description TEXT NOT NULL,
+			assigned_to VARCHAR(100),
 			expires_at TIMESTAMP NOT NULL,
 			created_at TIMESTAMP DEFAULT NOW(),
 			updated_at TIMESTAMP DEFAULT NOW()
