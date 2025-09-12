@@ -2,14 +2,15 @@ package seed
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/repository/postgres"
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils"
 )
 
-func data() []postgres.Task {
+var Seeded bool
+
+func Data() []postgres.Task {
 	dummyTasks := []postgres.Task{
 		{
 			ID:          utils.Uuid(),
@@ -60,18 +61,16 @@ func SeedTasks(p *postgres.PostgresConn) error {
 	seeded, err := p.CheckDataExists()
 
 	if err != nil {
-		log.Printf("failed to perform data seeding: %v", err)
 		return err
 	}
 
-	if seeded {
-		log.Println("skipping seeding: tasks already exist in the database")
-		return nil
-	}
-	for _, task := range data() {
+	Seeded = seeded
+
+	for _, task := range Data() {
 		if err := p.Insert(task); err != nil {
 			return fmt.Errorf("failed to insert task %s: %w", task.Name, err)
 		}
 	}
+
 	return nil
 }
