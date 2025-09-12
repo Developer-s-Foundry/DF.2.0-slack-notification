@@ -5,13 +5,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	fmt.Println("Hello World!")
-
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal(err)
@@ -22,8 +22,16 @@ func main() {
 		log.Fatal("PORT is not found in the environment file!")
 	}
 
-	fmt.Println("Port:", portString)
+	portInt, err := strconv.Atoi(portString)
+	if err != nil {
+		log.Fatal("Invalid port parameter passed")
+	}
 
-	// Start webserver
-	http.ListenAndServe(":"+portString, nil)
+	mux := http.Server{
+		Addr:         fmt.Sprintf(":%d", portInt),
+		ReadTimeout:  time.Minute * 30,
+		WriteTimeout: time.Minute * 30,
+	}
+
+	log.Fatal(mux.ListenAndServe())
 }
