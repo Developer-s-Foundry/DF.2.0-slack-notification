@@ -32,7 +32,7 @@ logs:
 psql:
 	docker exec -it $(POSTGRES_CONTAINER) psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
-build:
+build: postgres
 	go build -o $(BINARY_NAME) ./...
 
 run: build
