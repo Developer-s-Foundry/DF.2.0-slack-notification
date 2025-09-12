@@ -1,3 +1,5 @@
+.SILENT:
+
 POSTGRES_CONTAINER=my_postgres
 POSTGRES_USER=admin
 POSTGRES_PASSWORD=secret
@@ -32,8 +34,8 @@ logs:
 psql:
 	docker exec -it $(POSTGRES_CONTAINER) psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
-build: postgres
-	go build -o $(BINARY_NAME) ./...
+build: 
+	go build -o $(BINARY_NAME)
 
 run: build
 	./$(BINARY_NAME)

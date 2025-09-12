@@ -8,12 +8,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/handlers"
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/repository/postgres"
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils/seed"
 	"github.com/joho/godotenv"
 )
 
 func main() {
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal(err)
@@ -29,31 +31,36 @@ func main() {
 		log.Fatal("Invalid port parameter passed")
 	}
 
+	// database setup
 	url, user := os.Getenv("DB_URL"), os.Getenv("DB_USER")
 	host, port := os.Getenv("DB_HOST"), os.Getenv("DB_PORT")
 	password, port := os.Getenv("DB_PASSWORD"), os.Getenv("DB_PORT")
 	db_name, db_ssl := os.Getenv("DB_NAME"), os.Getenv("DB_SSL")
 
 	post, err := postgres.ConnectPostgres(url, password, port, host, db_name, user, db_ssl)
-
 	if err != nil {
 		panic(err)
 	}
 
-	if !seed.Seeded {
-		if err := seed.SeedTasks(post); err != nil {
-			log.Printf("failed to perform data seeding: %v", err)
-		}
-		log.Printf("Seeded %d dummy tasks successfully", len(seed.Data()))
-	} else {
-		log.Printf("Data already seeded")
+	// seed data to DB
+	if err := seed.SeedTasks(post); err != nil {
+		log.Printf("failed to perform data seeding: %v", err)
 	}
 
-	mux := http.Server{
+	// handler registries:
+	task := handlers.TaskHandler{DB: post}
+
+	// serve mux
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api/v1/task", task.CreateTask)
+
+	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", portInt),
 		ReadTimeout:  time.Minute * 30,
 		WriteTimeout: time.Minute * 30,
+		Handler:      mux,
 	}
 
-	log.Fatal(mux.ListenAndServe())
+	log.Printf("Server is running on %s\n", server.Addr)
+	log.Fatal(server.ListenAndServe())
 }
