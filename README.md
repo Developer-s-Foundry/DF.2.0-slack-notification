@@ -21,8 +21,6 @@ The project is written purely in **Golang** and consumes events on a RabbitMQ qu
 
 * **Backend Framework/API Layer**: Golang stdlib
 * **Database**: PostgreSQL (recommended) / SQLite (development)
-* **Authentication**: TBD
-
 ---
 
 ## 👨‍💻 Team Members
@@ -60,5 +58,6 @@ go build
 3. Commit your changes (`git commit -m 'Add new feature'`)
 4. Push to the branch (`git push origin feature/new-feature`)
 5. Create a Pull Request
+
 
 ---
