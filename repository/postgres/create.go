@@ -24,9 +24,9 @@ func (p *PostgresConn) Create() error {
 			status VARCHAR(100) NOT NULL DEFAULT 'pending',
 			description TEXT NOT NULL,
 			assigned_to VARCHAR(100),
-			expires_at TIMESTAMP NOT NULL,
-			created_at TIMESTAMP DEFAULT NOW(),
-			updated_at TIMESTAMP DEFAULT NOW()
+			expires_at TIMESTAMPTZ,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+			updated_at TIMESTAMPTZ DEFAULT NOW()
 	)	
 	`
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

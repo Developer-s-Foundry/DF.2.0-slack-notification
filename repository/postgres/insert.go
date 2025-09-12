@@ -8,7 +8,7 @@ import (
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils"
 )
 
-func (p *PostgresConn) Insert(t Task) error {
+func (p *PostgresConn) Insert(t *Task) error {
 	t.ID = utils.Uuid()
 	query := `
 		INSERT INTO tasks (id, name, status, description, assigned_to, expires_at)
