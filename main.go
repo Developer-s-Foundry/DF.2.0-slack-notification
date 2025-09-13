@@ -10,6 +10,7 @@ import (
 
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/handlers"
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/repository/postgres"
+	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils"
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils/seed"
 	"github.com/joho/godotenv"
 )
@@ -47,10 +48,11 @@ func main() {
 		log.Printf("failed to perform data seeding: %v", err)
 	}
 
+	
+	// start consumer queue
+	go consumer(utils.ADD_TASK_TO_DB, 3)
 	// handler registries:
 	task := handlers.TaskHandler{DB: post}
-
-	// serve mux
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/v1/task", task.CreateTask)
 
