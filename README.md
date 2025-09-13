@@ -1,12 +1,8 @@
-
-
----
-
-# Developer Foundry 2.0 – Team M - Slack Notification integration
+# Developer Foundry 2.0 – Team H - Slack Notification integration
 
 ## Project Overview
 
-This repository contains the backend API for **Team M** of the Developer Foundry 2.0 Bootcamp.
+This repository contains the backend API for **Team H** of the Developer Foundry 2.0 Bootcamp.
 The project is written purely in **Golang** and consumes events on a RabbitMQ queue and then publishs events onto a Slack channel:
 
 ---
