@@ -6,4 +6,3 @@ DB_PASSWORD="secret"
 DB_PORT="5432"
 DB_NAME="mydb"
 DB_SSL="disabled"
-MESSAGE_QUEUE_URL=amqp://guest:guest@localhost:5672/
