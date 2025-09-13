@@ -28,6 +28,6 @@ func ConnectRedis(host, password string, db int) (*RedisConn, error) {
 		log.Printf("Error connecting to redis: %v\n", err)
 		return nil, err
 	}
-	log.Println(pong)
+	log.Println("REDIS: ", pong)
 	return &RedisConn{RConn: client}, nil
 }

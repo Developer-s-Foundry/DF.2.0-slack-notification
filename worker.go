@@ -8,13 +8,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils"
 	"github.com/redis/go-redis/v9"
 )
 
-func dispatcher(topic string, workerId int, r *redis.Client, ctx context.Context, wg *sync.WaitGroup) {
-	defer wg.Done()
+func dispatcher(topic string, workerId int, r *redis.Client) {
 	for {
-		task, err := r.BLPop(ctx, 2*time.Second, topic).Result()
+		task, err := r.BLPop(context.Background(), 2*time.Second, topic).Result()
 		if err != nil {
 			if errors.Is(err, redis.Nil) {
 				continue
@@ -25,11 +25,10 @@ func dispatcher(topic string, workerId int, r *redis.Client, ctx context.Context
 		if len(task) > 1 {
 			topic, payload := task[0], task[1]
 			log.Printf("worker %d processing task: %s", workerId, payload)
-			fmt.Println(payload)
 			switch topic {
 			// handle each task topic e.g adding to DB or reading to slack get handled from here p;
-			case "add-task-to-db":
-
+			case utils.ADD_TASK_TO_DB:
+				fmt.Println(topic, payload)
 			}
 		}
 	}
@@ -37,12 +36,12 @@ func dispatcher(topic string, workerId int, r *redis.Client, ctx context.Context
 
 func consumer(topic string, workers int, r *redis.Client) {
 	var wg = new(sync.WaitGroup)
-	for i := 1; i <= 10; i++ {
+	for i := 1; i <= workers; i++ {
+		wg.Add(1)
 		go func(workerId int) {
-			wg.Add(1)
-			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-			dispatcher(topic, i, r, ctx, wg)
-			cancel()
+			defer wg.Done()
+			dispatcher(topic, i, r)
 		}(i)
 	}
+	wg.Wait()
 }
