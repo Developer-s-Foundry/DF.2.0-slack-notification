@@ -45,5 +45,5 @@ func StartReceive() {
 	}()
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
-	<-forever // to keep this from exiting
+	<-forever // to keep this from exiting, there is a probably a better way to do this
 }
