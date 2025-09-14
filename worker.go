@@ -26,7 +26,7 @@ func dispatcher(topic string, workerId int, r *red.RedisConn, db *postgres.Postg
 		}
 		if len(task) > 1 {
 			topic, payload := task[0], task[1]
-			log.Printf("worker %d processing task: %s", workerId, task)
+			log.Printf("worker %d processing task: %s", workerId, topic)
 			switch topic {
 			// handle each task topic e.g adding to DB or reading to slack get handled from here p;
 			case utils.ADD_TASK_TO_DB:
@@ -69,6 +69,8 @@ func handleAddToDB(task postgres.Task, db *postgres.PostgresConn, r *red.RedisCo
 		return err
 	}
 
+	log.Println("data added to DB successfully")
+
 	key := fmt.Sprintf("task:%s", task.ID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -87,5 +89,7 @@ func handleAddToDB(task postgres.Task, db *postgres.PostgresConn, r *red.RedisCo
 		log.Printf("failed to add data to cache: %v\n", err)
 		return err
 	}
+
+	log.Println("data added to cache successfully")
 	return nil
 }
