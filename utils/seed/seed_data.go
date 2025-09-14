@@ -68,7 +68,7 @@ func SeedTasks(p *postgres.PostgresConn) error {
 		return nil
 	}
 	for _, task := range data() {
-		if err := p.Insert(&task); err != nil {
+		if err := p.Insert(task); err != nil {
 			return fmt.Errorf("failed to insert task %s: %w", task.Name, err)
 		}
 	}
