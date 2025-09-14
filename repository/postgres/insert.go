@@ -17,7 +17,7 @@ func (p *PostgresConn) Insert(t Task) error {
 	err := p.Conn.QueryRow(
 		ctx, query, t.ID, t.Name,
 		t.Status, t.Description,
-		t.AssignedTo, t.Expires_at,
+		t.AssignedTo, t.ExpiresAt,
 	).Scan(&t.CreatedAt, &t.UpdatedAt)
 
 	if err != nil {

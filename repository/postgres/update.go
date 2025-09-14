@@ -3,9 +3,10 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
-func (p *PostgresConn) UpdateTask(ctx context.Context, t Task) error {
+func (p *PostgresConn) UpdateTask(t Task) error {
 	query := `
 		UPDATE tasks
 		SET
@@ -18,6 +19,9 @@ func (p *PostgresConn) UpdateTask(ctx context.Context, t Task) error {
 		WHERE id = $7
 	`
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	result, err := p.Conn.Exec(
 		ctx,
 		query,
@@ -25,7 +29,7 @@ func (p *PostgresConn) UpdateTask(ctx context.Context, t Task) error {
 		t.Status,
 		t.Description,
 		t.AssignedTo,
-		t.Expires_at,
+		t.ExpiresAt,
 		t.UpdatedAt,
 		t.ID,
 	)

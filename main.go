@@ -40,7 +40,7 @@ func main() {
 	host := os.Getenv("DB_HOST")
 	password, port := os.Getenv("DB_PASSWORD"), os.Getenv("DB_PORT")
 	db_name, db_ssl := os.Getenv("DB_NAME"), os.Getenv("DB_SSL")
-	redConn, password := os.Getenv("RED_CONN_STRING"), os.Getenv("RED_PASSWORD")
+	redConn, redPassword := os.Getenv("RED_CONN_STRING"), os.Getenv("RED_PASSWORD")
 	slackToken := os.Getenv("SLACK_BOT_TOKEN")
 
 	post, err := postgres.ConnectPostgres(url, password, port, host, db_name, user, db_ssl)
@@ -48,7 +48,7 @@ func main() {
 		panic(err)
 	}
 
-	reds, err := red.ConnectRedis(redConn, password, 0)
+	reds, err := red.ConnectRedis(redConn, redPassword, 0)
 	if err != nil {
 		log.Printf("redis error: %v\n", err)
 		return
@@ -62,6 +62,7 @@ func main() {
 	// start consumer queue
 	go notifyExpiredTasks(time.Second, quitCh, reds)
 	go consumer(utils.ADD_TASK_TO_DB, 5, reds, post, slk)
+	go consumer(utils.UPDATE_TASK_IN_DB, 5, reds, post, slk)
 	go consumer(utils.NOTIFICATION, 5, reds, post, slk)
 
 	// handler registries:

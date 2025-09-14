@@ -22,7 +22,7 @@ func (p *PostgresConn) GetTaskByID(context context.Context, taskID string) (*Tas
 		&t.Status,
 		&t.Description,
 		&t.AssignedTo,
-		&t.Expires_at,
+		&t.ExpiresAt,
 		&t.CreatedAt,
 		&t.UpdatedAt)
 

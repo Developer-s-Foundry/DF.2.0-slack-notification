@@ -42,7 +42,7 @@ func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request, _ httpr
 		ID:          utils.Uuid(),
 		Name:        task.Name,
 		Description: task.Description,
-		Expires_at:  task.ExpiresAt,
+		ExpiresAt:   task.ExpiresAt,
 		AssignedTo:  task.AssignedTo,
 		Status:      task.Status,
 		CreatedAt:   time.Now(),
@@ -66,11 +66,8 @@ func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request, _ httpr
 		return
 	}
 
-	err = t.R.Set(ctx, key, payload)
-	if err != nil {
-		log.Printf("failed to add data to cache: %v\n", err)
-		message := map[string]string{"message": http.StatusText(http.StatusInternalServerError)}
-		utils.WriteToJson(w, message, http.StatusInternalServerError)
+	if err = t.R.Set(ctx, key, payload); err != nil {
+		handleCacheError(w, err, "primary set operation failed")
 		return
 	}
 
@@ -144,7 +141,7 @@ func (t *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request, ps http
 		existingTask.Description = *updates.Description
 	}
 	if updates.ExpiresAt != nil {
-		existingTask.Expires_at = *updates.ExpiresAt
+		existingTask.ExpiresAt = *updates.ExpiresAt
 	}
 	if updates.AssignedTo != nil {
 		existingTask.AssignedTo = *updates.AssignedTo
@@ -155,12 +152,49 @@ func (t *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request, ps http
 
 	existingTask.UpdatedAt = time.Now().UTC()
 
-	if err := t.DB.UpdateTask(r.Context(), *existingTask); err != nil {
-		log.Printf("unable to update task in db: %v", err)
-		utils.WriteToJson(w, "Internal Server Error", http.StatusInternalServerError)
+	go func() {
+		publisher(utils.UPDATE_TASK_IN_DB, 1, existingTask, t.R)
+	}()
+
+	key := fmt.Sprintf("task:%s", existingTask.ID)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	payload, err := json.Marshal(&updates)
+	if err != nil {
+		log.Printf("failed to marshal json data: %v\n", err)
+		message := map[string]string{"message": http.StatusText(http.StatusInternalServerError)}
+		utils.WriteToJson(w, message, http.StatusInternalServerError)
 		return
 	}
 
+	if err := t.R.Set(ctx, key, payload); err != nil {
+		handleCacheError(w, err, "primary set operation failed")
+		return
+	}
+
+	if err := t.R.Z(ctx, existingTask.ID, updates.ExpiresAt.Unix()); err != nil {
+		log.Printf("failed to add data to cache: %v\n", err)
+		return
+	}
+
+	log.Println("data added to cache successfully")
+
+	go func() {
+		message := fmt.Sprintf(
+			":memo: *Task Updated!*\n\n*Title:* %s\n*Assigned To:* %s\n*Status:* %s\n*Description*: %s\n*Due:* %s",
+			existingTask.Name,
+			existingTask.AssignedTo,
+			existingTask.Status,
+			existingTask.Description,
+			existingTask.ExpiresAt.Format("Jan 02, 2006 15:04 MST"),
+		)
+
+		if err := utils.SendSlackNotification(t.Slack, message); err != nil {
+			log.Printf("failed to send message to slack: %v", err)
+			return
+		}
+	}()
 	response := struct {
 		Data       interface{} `json:"data"`
 		StatusCode int         `json:"status_code"`
@@ -171,4 +205,10 @@ func (t *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request, ps http
 		Message:    "task updated successfully",
 	}
 	utils.WriteToJson(w, response, http.StatusOK)
+}
+
+func handleCacheError(w http.ResponseWriter, err error, message string) {
+	log.Printf("failed to add data to cache: %v: %s\n", err, message)
+	response := map[string]string{"message": http.StatusText(http.StatusInternalServerError)}
+	utils.WriteToJson(w, response, http.StatusInternalServerError)
 }

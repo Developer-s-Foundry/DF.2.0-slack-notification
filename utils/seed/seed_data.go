@@ -17,7 +17,7 @@ func data() []postgres.Task {
 			Status:      "pending",
 			Description: "Draft and submit the initial project proposal document for review.",
 			AssignedTo:  "Alice",
-			Expires_at:  time.Now().Add(24 * time.Hour),
+			ExpiresAt:   time.Now().Add(24 * time.Hour),
 		},
 		{
 			ID:          utils.Uuid(),
@@ -25,7 +25,7 @@ func data() []postgres.Task {
 			Status:      "in_progress",
 			Description: "Create ER diagrams and define the PostgreSQL schema for the application.",
 			AssignedTo:  "Bob",
-			Expires_at:  time.Now().Add(48 * time.Hour),
+			ExpiresAt:   time.Now().Add(48 * time.Hour),
 		},
 		{
 			ID:          utils.Uuid(),
@@ -33,7 +33,7 @@ func data() []postgres.Task {
 			Status:      "completed",
 			Description: "Add user authentication with JWT and password hashing.",
 			AssignedTo:  "Charlie",
-			Expires_at:  time.Now().Add(72 * time.Hour),
+			ExpiresAt:   time.Now().Add(72 * time.Hour),
 		},
 		{
 			ID:          utils.Uuid(),
@@ -41,7 +41,7 @@ func data() []postgres.Task {
 			Status:      "pending",
 			Description: "Set up Paystack API integration to handle user payments securely.",
 			AssignedTo:  "David",
-			Expires_at:  time.Now().Add(36 * time.Hour),
+			ExpiresAt:   time.Now().Add(36 * time.Hour),
 		},
 		{
 			ID:          utils.Uuid(),
@@ -49,7 +49,7 @@ func data() []postgres.Task {
 			Status:      "pending",
 			Description: "Deploy the latest build to the staging environment on Koyeb for QA testing.",
 			AssignedTo:  "Eve",
-			Expires_at:  time.Now().Add(60 * time.Hour),
+			ExpiresAt:   time.Now().Add(60 * time.Hour),
 		},
 	}
 
