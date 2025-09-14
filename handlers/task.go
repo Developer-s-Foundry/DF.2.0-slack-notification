@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -11,11 +14,13 @@ import (
 	red "github.com/Developer-s-Foundry/DF.2.0-slack-notification/repository/redis"
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils"
 	"github.com/julienschmidt/httprouter"
+	"github.com/slack-go/slack"
 )
 
 type TaskHandler struct {
-	DB *postgres.PostgresConn
-	R  *red.RedisConn
+	DB    *postgres.PostgresConn
+	R     *red.RedisConn
+	Slack *slack.Client
 }
 
 func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -40,8 +45,8 @@ func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request, _ httpr
 		Expires_at:  task.ExpiresAt,
 		AssignedTo:  task.AssignedTo,
 		Status:      task.Status,
-		CreatedAt:   time.Now().UTC(),
-		UpdatedAt:   time.Now().UTC(),
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	// var wg = new(sync.WaitGroup)
@@ -49,6 +54,49 @@ func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request, _ httpr
 		publisher(utils.ADD_TASK_TO_DB, 1, tsk, t.R)
 	}()
 
+	key := fmt.Sprintf("task:%s", tsk.ID)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	payload, err := json.Marshal(&task)
+	if err != nil {
+		log.Printf("failed to marshal json data: %v\n", err)
+		message := map[string]string{"message": http.StatusText(http.StatusInternalServerError)}
+		utils.WriteToJson(w, message, http.StatusInternalServerError)
+		return
+	}
+
+	err = t.R.Set(ctx, key, payload)
+	if err != nil {
+		log.Printf("failed to add data to cache: %v\n", err)
+		message := map[string]string{"message": http.StatusText(http.StatusInternalServerError)}
+		utils.WriteToJson(w, message, http.StatusInternalServerError)
+		return
+	}
+
+	if err := t.R.Z(ctx, tsk.ID, task.ExpiresAt.Unix()); err != nil {
+		log.Printf("failed to add data to cache: %v\n", err)
+		return
+	}
+
+	log.Println("data added to cache successfully")
+
+	// send message to slack
+	go func() {
+		message := fmt.Sprintf(
+			":memo: *New Task Created!*\n\n*Title:* %s\n*Assigned To:* %s\n*Status:* %s\n*Description*: %s\n*Due:* %s",
+			task.Name,
+			task.AssignedTo,
+			task.Status,
+			task.Description,
+			task.ExpiresAt.Format("Jan 02, 2006 15:04 MST"),
+		)
+
+		if err := utils.SendSlackNotification(t.Slack, message); err != nil {
+			log.Printf("failed to send message to slack: %v", err)
+			return
+		}
+	}()
 	response := struct {
 		Data       interface{} `json:"data"`
 		StatusCode int         `json:"status_code"`
