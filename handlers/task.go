@@ -1,18 +1,19 @@
 package handlers
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/repository/postgres"
+	red "github.com/Developer-s-Foundry/DF.2.0-slack-notification/repository/redis"
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils"
 	"github.com/julienschmidt/httprouter"
 )
 
 type TaskHandler struct {
 	DB *postgres.PostgresConn
+	R  *red.RedisConn
 }
 
 func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -30,19 +31,21 @@ func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request, _ httpr
 		return
 	}
 
-	fmt.Println(task)
-	tsk := &postgres.Task{
+	tsk := postgres.Task{
+		ID:          utils.Uuid(),
 		Name:        task.Name,
 		Description: task.Description,
 		Expires_at:  task.ExpiresAt,
 		AssignedTo:  task.AssignedTo,
 		Status:      task.Status,
+		CreatedAt:   time.Now().UTC(),
+		UpdatedAt:   time.Now().UTC(),
 	}
-	if err := t.DB.Insert(tsk); err != nil {
-		log.Printf("data insert failed: %v", err)
-		utils.WriteToJson(w, "unable to create task", http.StatusInternalServerError)
-		return
-	}
+
+	// var wg = new(sync.WaitGroup)
+	go func() {
+		publisher(utils.ADD_TASK_TO_DB, 1, tsk, t.R)
+	}()
 
 	response := struct {
 		Data       interface{} `json:"data"`

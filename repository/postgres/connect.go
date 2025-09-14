@@ -7,14 +7,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PostgresConn struct {
-	Conn *pgx.Conn
+	Conn *pgxpool.Pool
 }
 
-func NewPostgresConn(conn *pgx.Conn) *PostgresConn {
+func NewPostgresConn(conn *pgxpool.Pool) *PostgresConn {
 	return &PostgresConn{Conn: conn}
 }
 
@@ -31,7 +31,7 @@ func ConnectPostgres(uri, password, port, host, database, user, sslmode string) 
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	pgx, err := pgx.Connect(ctx, uri)
+	pgx, err := pgxpool.New(ctx, uri)
 
 	if err != nil {
 		log.Printf("Database connection failed: %v", err)
