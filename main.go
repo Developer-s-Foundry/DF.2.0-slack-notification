@@ -51,9 +51,6 @@ func main() {
 	// handler registries:
 	task := handlers.TaskHandler{DB: post}
 
-	// serve mux
-	// mux := http.NewServeMux()
-	// mux.HandleFunc("POST /api/v1/task", task.CreateTask)
 	router := httprouter.New()
 	router.POST("/api/v1/task", task.CreateTask)
 	router.PATCH("/api/v1/task/:id", task.UpdateTask)
