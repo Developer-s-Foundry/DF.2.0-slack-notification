@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -42,7 +43,7 @@ func (r *RedisConn) Del(key string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	err := r.RConn.Del(ctx, key).Err()
+	err := r.RConn.GetDel(ctx, key).Err()
 
 	if err != nil {
 		return fmt.Errorf("failed to delete key %q: %w", key, err)
@@ -50,9 +51,14 @@ func (r *RedisConn) Del(key string) error {
 	return nil
 }
 
-func (r *RedisConn) Z(ctx context.Context, taskId string, expiresAt int64) {
-	r.RConn.ZAdd(ctx, TaskExpirations, redis.Z{
+func (r *RedisConn) Z(ctx context.Context, taskId string, expiresAt int64) error {
+	if err := r.RConn.ZAdd(ctx, TaskExpirations, redis.Z{
 		Score:  float64(expiresAt),
 		Member: taskId,
-	})
+	}).Err(); err != nil {
+		return err
+	}
+
+	log.Println("task added to Zset, redis")
+	return nil
 }

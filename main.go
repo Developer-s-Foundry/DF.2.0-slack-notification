@@ -59,10 +59,10 @@ func main() {
 
 	slk := slack.New(slackToken)
 	// start consumer queue
-	go consumer(utils.ADD_TASK_TO_DB, 3, reds, post)
-	go notifyExpiredTasks(time.Second*5, quitCh, reds)
+	go notifyExpiredTasks(time.Second, quitCh, reds)
+	go consumer(utils.ADD_TASK_TO_DB, 5, reds, post, slk)
+	go consumer(utils.NOTIFICATION, 5, reds, post, slk)
 
-	// handler registries:
 	task := handlers.TaskHandler{DB: post, R: reds, Slack: slk}
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/v1/task", task.CreateTask)

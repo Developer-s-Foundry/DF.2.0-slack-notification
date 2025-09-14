@@ -42,8 +42,8 @@ func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		Expires_at:  task.ExpiresAt,
 		AssignedTo:  task.AssignedTo,
 		Status:      task.Status,
-		CreatedAt:   time.Now().UTC(),
-		UpdatedAt:   time.Now().UTC(),
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	// var wg = new(sync.WaitGroup)
@@ -71,15 +71,21 @@ func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := t.R.Z(ctx, tsk.ID, task.ExpiresAt.Unix()); err != nil {
+		log.Printf("failed to add data to cache: %v\n", err)
+		return
+	}
+
 	log.Println("data added to cache successfully")
 
 	// send message to slack
 	go func() {
 		message := fmt.Sprintf(
-			":memo: *New Task Created!*\n\n*Title:* %s\n*Assigned To:* %s\n*Status:* %s\n*Due:* %s",
+			":memo: *New Task Created!*\n\n*Title:* %s\n*Assigned To:* %s\n*Status:* %s\n*Description*: %s\n*Due:* %s",
 			task.Name,
 			task.AssignedTo,
 			task.Status,
+			task.Description,
 			task.ExpiresAt.Format("Jan 02, 2006 15:04 MST"),
 		)
 
