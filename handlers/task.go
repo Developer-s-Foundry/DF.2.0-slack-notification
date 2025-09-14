@@ -64,9 +64,6 @@ func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request, _ httpr
 func (t *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	taskID := ps.ByName("id")
 
-	// 2. Read the JSON body into a struct.
-	// Use a struct with pointers to distinguish between
-	// fields not present in the JSON vs. empty values.
 	var updates struct {
 		Name        *string    `json:"name"`
 		Description *string    `json:"description"`
@@ -110,7 +107,7 @@ func (t *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request, ps http
 
 	existingTask.UpdatedAt = time.Now().UTC()
 
-	if err := t.DB.UpdateTask(r.Context(), existingTask); err != nil {
+	if err := t.DB.UpdateTask(r.Context(), *existingTask); err != nil {
 		log.Printf("unable to update task in db: %v", err)
 		utils.WriteToJson(w, "Internal Server Error", http.StatusInternalServerError)
 		return
