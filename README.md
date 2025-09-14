@@ -10,7 +10,7 @@ The project is written purely in **Golang** and consumes events on a RabbitMQ qu
 ## Features
 
 *  **Consume Events** – Consume change events from placed on RabbitMQ queues
-*  **Notify Slack Channels** – Publish change event into a slack channel
+*  **Notify Slack Channels** – Publish change event into a Slack channel
 ---
 
 ## 🛠️ Tech Stack
