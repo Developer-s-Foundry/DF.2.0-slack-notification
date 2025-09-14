@@ -37,6 +37,8 @@ func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		Expires_at:  task.ExpiresAt,
 		AssignedTo:  task.AssignedTo,
 		Status:      task.Status,
+		CreatedAt:   time.Now().UTC(),
+		UpdatedAt:   time.Now().UTC(),
 	}
 
 	// var wg = new(sync.WaitGroup)

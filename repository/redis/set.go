@@ -10,9 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func (r *RedisConn) Set(key string, data interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
+func (r *RedisConn) Set(ctx context.Context, key string, data interface{}) error {
 	err := r.RConn.Set(ctx, key, data, 0).Err()
 	if err != nil {
 		return err
@@ -20,9 +18,7 @@ func (r *RedisConn) Set(key string, data interface{}) error {
 	return nil
 }
 
-func (r *RedisConn) Get(key string, receiver interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
+func (r *RedisConn) Get(ctx context.Context, key string, receiver interface{}) error {
 	res, err := r.RConn.Get(ctx, key).Result()
 
 	if err != nil {

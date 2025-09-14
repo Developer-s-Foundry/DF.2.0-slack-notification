@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func (p *PostgresConn) Insert(t *Task) error {
+func (p *PostgresConn) Insert(t Task) error {
 	query := `
 		INSERT INTO tasks (id, name, status, description, assigned_to, expires_at)
 		VALUES ($1, $2, $3, $4, $5, $6)

@@ -56,7 +56,7 @@ func main() {
 	}
 
 	// start consumer queue
-	go consumer(utils.ADD_TASK_TO_DB, 3, reds.RConn)
+	go consumer(utils.ADD_TASK_TO_DB, 3, reds, post)
 
 	// handler registries:
 	task := handlers.TaskHandler{DB: post, R: reds}

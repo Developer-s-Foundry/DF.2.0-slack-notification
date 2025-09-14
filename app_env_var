@@ -1,3 +1,4 @@
+# only dummy values should be added here and not real configuration keys
 PORT=8080
 DB_URL=postgres://admin:secret@localhost:5432/mydb
 DB_HOST="localhost"
@@ -6,3 +7,5 @@ DB_PASSWORD="secret"
 DB_PORT="5432"
 DB_NAME="mydb"
 DB_SSL="disabled"
+RED_CONN_STRING="localhost:6379"
+RED_PASSWORD=""
