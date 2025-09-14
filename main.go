@@ -14,10 +14,11 @@ import (
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils"
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils/seed"
 	"github.com/joho/godotenv"
+	"github.com/slack-go/slack"
 )
 
 func main() {
-
+	quitCh := make(chan struct{})
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal(err)
@@ -39,6 +40,7 @@ func main() {
 	password, port := os.Getenv("DB_PASSWORD"), os.Getenv("DB_PORT")
 	db_name, db_ssl := os.Getenv("DB_NAME"), os.Getenv("DB_SSL")
 	redConn, password := os.Getenv("RED_CONN_STRING"), os.Getenv("RED_PASSWORD")
+	slackToken := os.Getenv("SLACK_BOT_TOKEN")
 
 	post, err := postgres.ConnectPostgres(url, password, port, host, db_name, user, db_ssl)
 	if err != nil {
@@ -55,11 +57,13 @@ func main() {
 		log.Printf("failed to perform data seeding: %v", err)
 	}
 
+	slk := slack.New(slackToken)
 	// start consumer queue
-	go consumer(utils.ADD_TASK_TO_DB, 3, reds, post)
+	go notifyExpiredTasks(time.Second, quitCh, reds)
+	go consumer(utils.ADD_TASK_TO_DB, 5, reds, post, slk)
+	go consumer(utils.NOTIFICATION, 5, reds, post, slk)
 
-	// handler registries:
-	task := handlers.TaskHandler{DB: post, R: reds}
+	task := handlers.TaskHandler{DB: post, R: reds, Slack: slk}
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/v1/task", task.CreateTask)
 
@@ -71,4 +75,6 @@ func main() {
 	}
 	log.Printf("Server is running on %s\n", server.Addr)
 	log.Fatal(server.ListenAndServe())
+
+	<-quitCh
 }

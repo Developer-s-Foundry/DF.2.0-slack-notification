@@ -4,4 +4,5 @@ package utils
 
 const (
 	ADD_TASK_TO_DB = "add-task-to-db"
+	NOTIFICATION   = "notifications"
 )
