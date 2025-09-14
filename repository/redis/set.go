@@ -10,6 +10,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+var TaskExpirations = "task_expirations"
+
 func (r *RedisConn) Set(ctx context.Context, key string, data interface{}) error {
 	err := r.RConn.Set(ctx, key, data, 0).Err()
 	if err != nil {
@@ -46,4 +48,11 @@ func (r *RedisConn) Del(key string) error {
 		return fmt.Errorf("failed to delete key %q: %w", key, err)
 	}
 	return nil
+}
+
+func (r *RedisConn) Z(ctx context.Context, taskId string, expiresAt int64) {
+	r.RConn.ZAdd(ctx, TaskExpirations, redis.Z{
+		Score:  float64(expiresAt),
+		Member: taskId,
+	})
 }

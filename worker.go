@@ -27,6 +27,7 @@ func dispatcher(topic string, workerId int, r *red.RedisConn, db *postgres.Postg
 		if len(task) > 1 {
 			topic, payload := task[0], task[1]
 			log.Printf("worker %d processing task: %s", workerId, topic)
+
 			switch topic {
 			// handle each task topic e.g adding to DB or reading to slack get handled from here p;
 			case utils.ADD_TASK_TO_DB:
@@ -37,12 +38,12 @@ func dispatcher(topic string, workerId int, r *red.RedisConn, db *postgres.Postg
 					continue
 				}
 
-				err = handleAddToDB(task, db, r)
+				err = handleAddToDB(task, db)
 				if err != nil {
 					log.Println(err.Error())
 					continue
 				}
-				// write logic to handle data to databas
+			case utils.NOTIFICATION:
 			}
 		}
 
@@ -62,7 +63,7 @@ func consumer(topic string, workers int, r *red.RedisConn, db *postgres.Postgres
 	wg.Wait()
 }
 
-func handleAddToDB(task postgres.Task, db *postgres.PostgresConn, r *red.RedisConn) error {
+func handleAddToDB(task postgres.Task, db *postgres.PostgresConn) error {
 	err := db.Insert(task)
 	if err != nil {
 		log.Printf("failed to add data to db: %v", err)
@@ -70,26 +71,47 @@ func handleAddToDB(task postgres.Task, db *postgres.PostgresConn, r *red.RedisCo
 	}
 
 	log.Println("data added to DB successfully")
-
-	key := fmt.Sprintf("task:%s", task.ID)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	payload, err := json.Marshal(&task)
-
-	if err != nil {
-		log.Printf("failed to marshal json data: %v\n", err)
-		return err
-	}
-
-	err = r.Set(ctx, key, payload)
-
-	if err != nil {
-		log.Printf("failed to add data to cache: %v\n", err)
-		return err
-	}
-
-	log.Println("data added to cache successfully")
 	return nil
+}
+
+func notifyExpiredTasks(interval time.Duration, quitCh chan struct{}, r *red.RedisConn) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			now := time.Now().Unix()
+
+			tasks, err := r.RConn.ZRangeByScore(context.Background(), red.TaskExpirations, &redis.ZRangeBy{
+				Min: "-inf",
+				Max: fmt.Sprintf("%d", now),
+			}).Result()
+
+			if err != nil {
+				log.Println("Redis error:", err)
+				time.Sleep(time.Second * 2) // sleep for 2 seconds
+				continue
+			}
+
+			for _, taskID := range tasks {
+				r.RConn.ZRem(context.Background(), red.TaskExpirations, taskID)
+				notify := map[string]string{
+					"task_id": taskID,
+					"event":   "expires",
+				}
+
+				data, _ := json.Marshal(notify)
+				err := r.Enqueue(utils.NOTIFICATION, data)
+
+				if err != nil {
+					log.Printf("failed to add task to queue: %v", err)
+					time.Sleep(time.Second * 2) // sleep for 2 seconds
+					continue
+				}
+			}
+
+		case <-quitCh:
+			return
+		}
+	}
 }
