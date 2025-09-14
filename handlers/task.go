@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"database/sql"
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -59,6 +61,69 @@ func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request, _ httpr
 	utils.WriteToJson(w, response, http.StatusCreated)
 }
 
-func (t *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request, parameter httprouter.Params) {
-	fmt.Fprintf(w, "hello, %s!\n", parameter.ByName("id"))
+func (t *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	taskID := ps.ByName("id")
+
+	// 2. Read the JSON body into a struct.
+	// Use a struct with pointers to distinguish between
+	// fields not present in the JSON vs. empty values.
+	var updates struct {
+		Name        *string    `json:"name"`
+		Description *string    `json:"description"`
+		ExpiresAt   *time.Time `json:"expires_at"`
+		AssignedTo  *string    `json:"assigned_to"`
+		Status      *string    `json:"status"`
+	}
+
+	if err := utils.ReadDataFromJson(r, &updates); err != nil {
+		log.Printf("unable to decode json data: %v", err)
+		utils.WriteToJson(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	existingTask, err := t.DB.GetTaskByID(r.Context(), taskID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteToJson(w, "Task not found", http.StatusNotFound)
+			return
+		}
+		log.Printf("unable to get task from db: %v", err)
+		utils.WriteToJson(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if updates.Name != nil {
+		existingTask.Name = *updates.Name
+	}
+	if updates.Description != nil {
+		existingTask.Description = *updates.Description
+	}
+	if updates.ExpiresAt != nil {
+		existingTask.Expires_at = *updates.ExpiresAt
+	}
+	if updates.AssignedTo != nil {
+		existingTask.AssignedTo = *updates.AssignedTo
+	}
+	if updates.Status != nil {
+		existingTask.Status = *updates.Status
+	}
+
+	existingTask.UpdatedAt = time.Now().UTC()
+
+	if err := t.DB.UpdateTask(r.Context(), existingTask); err != nil {
+		log.Printf("unable to update task in db: %v", err)
+		utils.WriteToJson(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	response := struct {
+		Data       interface{} `json:"data"`
+		StatusCode int         `json:"status_code"`
+		Message    string      `json:"message"`
+	}{
+		Data:       existingTask,
+		StatusCode: http.StatusOK,
+		Message:    "task updated successfully",
+	}
+	utils.WriteToJson(w, response, http.StatusOK)
 }
