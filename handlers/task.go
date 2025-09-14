@@ -8,13 +8,14 @@ import (
 
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/repository/postgres"
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils"
+	"github.com/julienschmidt/httprouter"
 )
 
 type TaskHandler struct {
 	DB *postgres.PostgresConn
 }
 
-func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
+func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	var task struct {
 		Name        string    `json:"name"`
 		Description string    `json:"description"`
@@ -53,4 +54,8 @@ func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		Message:    "task created successfully",
 	}
 	utils.WriteToJson(w, response, http.StatusCreated)
+}
+
+func (t *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request, parameter httprouter.Params) {
+	fmt.Fprintf(w, "hello, %s!\n", parameter.ByName("id"))
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/repository/postgres"
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils/seed"
 	"github.com/joho/godotenv"
+	"github.com/julienschmidt/httprouter"
 )
 
 func main() {
@@ -33,7 +34,7 @@ func main() {
 
 	// database setup
 	url, user := os.Getenv("DB_URL"), os.Getenv("DB_USER")
-	host, port := os.Getenv("DB_HOST"), os.Getenv("DB_PORT")
+	host := os.Getenv("DB_HOST")
 	password, port := os.Getenv("DB_PASSWORD"), os.Getenv("DB_PORT")
 	db_name, db_ssl := os.Getenv("DB_NAME"), os.Getenv("DB_SSL")
 
@@ -51,14 +52,17 @@ func main() {
 	task := handlers.TaskHandler{DB: post}
 
 	// serve mux
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/v1/task", task.CreateTask)
+	// mux := http.NewServeMux()
+	// mux.HandleFunc("POST /api/v1/task", task.CreateTask)
+	router := httprouter.New()
+	router.POST("/api/v1/task", task.CreateTask)
+	router.PATCH("/api/v1/task/:id", task.UpdateTask)
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", portInt),
 		ReadTimeout:  time.Minute * 30,
 		WriteTimeout: time.Minute * 30,
-		Handler:      mux,
+		Handler:      router,
 	}
 
 	log.Printf("Server is running on %s\n", server.Addr)
