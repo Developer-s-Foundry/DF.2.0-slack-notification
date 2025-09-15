@@ -11,7 +11,7 @@ type Task struct {
 	Status      string    `json:"status"`
 	Description string    `json:"description,omitempty"`
 	AssignedTo  string    `json:"assigned_to,omitempty"`
-	Expires_at  time.Time `json:"expires_at,omitempty"`
+	ExpiresAt   time.Time `json:"expires_at,omitempty"`
 	CreatedAt   time.Time `json:"created_at,omitempty"`
 	UpdatedAt   time.Time `json:"updated_at,omitempty"`
 }

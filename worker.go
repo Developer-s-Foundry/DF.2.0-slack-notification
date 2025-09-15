@@ -18,7 +18,7 @@ import (
 
 func dispatcher(topic string, workerId int, r *red.RedisConn, db *postgres.PostgresConn, slk *slack.Client) {
 	for {
-		task, err := r.RConn.BLPop(context.Background(), 2*time.Second, topic).Result()
+		task, err := r.RConn.BLPop(context.Background(), 2*time.Second, topic).Result() // task is string here
 		if err != nil {
 			if errors.Is(err, redis.Nil) {
 				continue
@@ -29,20 +29,27 @@ func dispatcher(topic string, workerId int, r *red.RedisConn, db *postgres.Postg
 			topic, payload := task[0], task[1]
 			log.Printf("worker %d processing task: %s", workerId, topic)
 
+			var task postgres.Task = postgres.Task{} // task is redeclared to our task data structure here
+			isTaskTopic := (topic == utils.ADD_TASK_TO_DB || topic == utils.UPDATE_TASK_IN_DB)
+			if isTaskTopic {
+				err = json.Unmarshal([]byte(payload), &task)
+				if err != nil {
+					log.Printf("failed to unmarshal json data: %v\n", err)
+					return
+				}
+			}
+
 			switch topic {
 			// handle each task topic e.g adding to DB or reading to slack get handled from here p;
 			case utils.ADD_TASK_TO_DB:
-				var task postgres.Task = postgres.Task{}
-				err := json.Unmarshal([]byte(payload), &task)
-				if err != nil {
-					log.Printf("failed to marshal json data: %v\n", err)
-					continue
-				}
-
 				err = handleAddToDB(task, db)
 				if err != nil {
 					log.Println(err.Error())
-					continue
+				}
+			case utils.UPDATE_TASK_IN_DB:
+				err = handleUpdateTaskInDB(task, db)
+				if err != nil {
+					log.Println(err.Error())
 				}
 			case utils.NOTIFICATION:
 				slackNotificationMessage(slk, r, []byte(payload))
@@ -73,6 +80,17 @@ func handleAddToDB(task postgres.Task, db *postgres.PostgresConn) error {
 	}
 
 	log.Println("data added to DB successfully")
+	return nil
+}
+
+func handleUpdateTaskInDB(task postgres.Task, db *postgres.PostgresConn) error {
+	err := db.UpdateTask(task)
+	if err != nil {
+		log.Printf("unable to update task in db: %v", err)
+		return err
+	}
+
+	log.Println("data updated in DB successfully")
 	return nil
 }
 
@@ -110,13 +128,13 @@ func slackNotificationMessage(slk *slack.Client, r *red.RedisConn, payload []byt
 				task.Status,
 				task.UpdatedAt.Format("Jan 02, 2006 15:04 MST"),
 			)
-		} else if time.Now().After(task.Expires_at) {
+		} else if time.Now().After(task.ExpiresAt) {
 			message = fmt.Sprintf(
 				":warning: *Task Expired!*\n\n*Title:* %s\n*Assigned To:* %s\n*Status:* %s\n*Expired At:* %s\n\nPlease review and take action.",
 				task.Name,
 				task.AssignedTo,
 				task.Status,
-				task.Expires_at.Format("Jan 02, 2006 15:04 MST"),
+				task.ExpiresAt.Format("Jan 02, 2006 15:04 MST"),
 			)
 		} else {
 			message = fmt.Sprintf(
@@ -124,7 +142,7 @@ func slackNotificationMessage(slk *slack.Client, r *red.RedisConn, payload []byt
 				task.Name,
 				task.AssignedTo,
 				task.Status,
-				task.Expires_at.Format("Jan 02, 2006 15:04 MST"),
+				task.ExpiresAt.Format("Jan 02, 2006 15:04 MST"),
 			)
 		}
 		if err := utils.SendSlackNotification(slk, message); err != nil {

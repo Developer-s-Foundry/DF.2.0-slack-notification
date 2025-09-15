@@ -14,6 +14,7 @@ import (
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils"
 	"github.com/Developer-s-Foundry/DF.2.0-slack-notification/utils/seed"
 	"github.com/joho/godotenv"
+	"github.com/julienschmidt/httprouter"
 	"github.com/slack-go/slack"
 )
 
@@ -36,10 +37,10 @@ func main() {
 
 	// database setup
 	url, user := os.Getenv("DB_URL"), os.Getenv("DB_USER")
-	host, port := os.Getenv("DB_HOST"), os.Getenv("DB_PORT")
+	host := os.Getenv("DB_HOST")
 	password, port := os.Getenv("DB_PASSWORD"), os.Getenv("DB_PORT")
 	db_name, db_ssl := os.Getenv("DB_NAME"), os.Getenv("DB_SSL")
-	redConn, password := os.Getenv("RED_CONN_STRING"), os.Getenv("RED_PASSWORD")
+	redConn, redPassword := os.Getenv("RED_CONN_STRING"), os.Getenv("RED_PASSWORD")
 	slackToken := os.Getenv("SLACK_BOT_TOKEN")
 
 	post, err := postgres.ConnectPostgres(url, password, port, host, db_name, user, db_ssl)
@@ -47,7 +48,7 @@ func main() {
 		panic(err)
 	}
 
-	reds, err := red.ConnectRedis(redConn, password, 0)
+	reds, err := red.ConnectRedis(redConn, redPassword, 0)
 	if err != nil {
 		log.Printf("redis error: %v\n", err)
 		return
@@ -61,17 +62,20 @@ func main() {
 	// start consumer queue
 	go notifyExpiredTasks(time.Second, quitCh, reds)
 	go consumer(utils.ADD_TASK_TO_DB, 5, reds, post, slk)
+	go consumer(utils.UPDATE_TASK_IN_DB, 5, reds, post, slk)
 	go consumer(utils.NOTIFICATION, 5, reds, post, slk)
 
+	// handler registries:
 	task := handlers.TaskHandler{DB: post, R: reds, Slack: slk}
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/v1/task", task.CreateTask)
+	router := httprouter.New()
+	router.POST("/api/v1/task", task.CreateTask)
+	router.PATCH("/api/v1/task/:id", task.UpdateTask)
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", portInt),
 		ReadTimeout:  time.Minute * 30,
 		WriteTimeout: time.Minute * 30,
-		Handler:      mux,
+		Handler:      router,
 	}
 	log.Printf("Server is running on %s\n", server.Addr)
 	log.Fatal(server.ListenAndServe())
