@@ -3,13 +3,13 @@
 ## Project Overview
 
 This repository contains the backend API for **Team H** of the Developer Foundry 2.0 Bootcamp.
-The project is written purely in **Golang** and consumes events on a RabbitMQ queue and then publishs events onto a Slack channel:
+The project is written purely in **Golang** and consumes events on a Redis queue and then publishes events onto a Slack channel:
 
 ---
 
 ## Features
 
-*  **Consume Events** – Consume change events from placed on RabbitMQ queues
+*  **Consume Events** – Consume change events from placed on Redis queues
 *  **Notify Slack Channels** – Publish change event into a Slack channel
 ---
 
