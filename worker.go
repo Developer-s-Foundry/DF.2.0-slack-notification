@@ -40,7 +40,7 @@ func dispatcher(topic string, workerId int, r *red.RedisConn, db *postgres.Postg
 			}
 
 			switch topic {
-			// handle each task topic e.g adding to DB or reading to slack get handled from here p;
+			// handle each task topic e.g adding to DB or reading to slack get handled from here
 			case utils.ADD_TASK_TO_DB:
 				err = handleAddToDB(task, db)
 				if err != nil {

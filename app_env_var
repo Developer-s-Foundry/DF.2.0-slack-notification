@@ -10,3 +10,4 @@ DB_SSL="disabled"
 RED_CONN_STRING="localhost:6379"
 RED_PASSWORD=""
 SLACK_BOT_TOKEN='xxxxxx'
+SLACK_CHANNEL_ID='xxxxxx'

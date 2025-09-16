@@ -2,13 +2,14 @@ package utils
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/slack-go/slack"
 )
 
 func SendSlackNotification(api *slack.Client, message string) error {
-	channelID := "C09FJSVR52M"
+	channelID := os.Getenv("SLACK_CHANNEL_ID")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
