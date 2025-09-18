@@ -22,7 +22,7 @@ func main() {
 	quitCh := make(chan struct{})
 	prod := os.Getenv("PROD")
 	var err error
-	if prod == "PROD" {
+	if prod != "PROD" {
 		err = godotenv.Load()
 		if err != nil {
 			log.Fatal(err)
