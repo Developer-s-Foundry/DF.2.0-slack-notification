@@ -184,6 +184,19 @@ func notifyExpiredTasks(interval time.Duration, quitCh chan struct{}, r *red.Red
 					"event":  "task-expires",
 				}
 
+				key := fmt.Sprintf("task:%s", taskID)
+
+				var task *postgres.Task = &postgres.Task{}
+				err = r.Get(context.Background(), key, task)
+
+				if err != nil {
+					log.Printf("failed to read task %v", err)
+					continue
+				}
+				if task.ExpiresAt.IsZero() {
+					continue
+				}
+
 				data, _ := json.Marshal(notify)
 				err := r.Enqueue(utils.NOTIFICATION, data)
 
