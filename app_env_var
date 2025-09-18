@@ -9,3 +9,4 @@ DB_NAME="mydb"
 DB_SSL="disabled"
 REDIS_URL="xxxx"
 SLACK_BOT_TOKEN='xxxxxx'
+PROD="DEV"
