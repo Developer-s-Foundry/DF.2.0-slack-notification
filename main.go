@@ -20,9 +20,13 @@ import (
 
 func main() {
 	quitCh := make(chan struct{})
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal(err)
+	prod := os.Getenv("PROD")
+	var err error
+	if prod == "PROD" {
+		err = godotenv.Load()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	portString := os.Getenv("PORT")
