@@ -12,16 +12,12 @@ type RedisConn struct {
 	RConn *redis.Client
 }
 
-func ConnectRedis(host, password string, db int) (*RedisConn, error) {
+func ConnectRedis(redisUrl string) (*RedisConn, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	client := redis.NewClient(&redis.Options{
-		Addr:     host,
-		Password: password,
-		DB:       db,
-	})
-
+	opt, _ := redis.ParseURL(redisUrl)
+	client := redis.NewClient(opt)
 	pong, err := client.Ping(ctx).Result()
 
 	if err != nil {

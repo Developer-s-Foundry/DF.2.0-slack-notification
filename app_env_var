@@ -7,6 +7,5 @@ DB_PASSWORD="secret"
 DB_PORT="5432"
 DB_NAME="mydb"
 DB_SSL="disabled"
-RED_CONN_STRING="localhost:6379"
-RED_PASSWORD=""
+REDIS_URL="xxxx"
 SLACK_BOT_TOKEN='xxxxxx'
