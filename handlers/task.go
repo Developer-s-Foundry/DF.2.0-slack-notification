@@ -55,7 +55,7 @@ func (t *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request, _ httpr
 	}()
 
 	key := fmt.Sprintf("task:%s", tsk.ID)
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	payload, err := json.Marshal(&task)
@@ -157,7 +157,7 @@ func (t *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request, ps http
 	}()
 
 	key := fmt.Sprintf("task:%s", existingTask.ID)
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	payload, err := json.Marshal(&updates)

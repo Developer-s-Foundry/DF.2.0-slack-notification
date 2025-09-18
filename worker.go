@@ -107,7 +107,7 @@ func slackNotificationMessage(slk *slack.Client, r *red.RedisConn, payload []byt
 
 	key := "task:" + Payload.TaskId
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	var task *postgres.Task = &postgres.Task{}
