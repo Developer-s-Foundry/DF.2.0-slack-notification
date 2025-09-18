@@ -19,10 +19,14 @@ func NewPostgresConn(conn *pgxpool.Pool) *PostgresConn {
 }
 
 func ConnectPostgres(uri, password, port, host, database, user, sslmode string) (*PostgresConn, error) {
-	portInt, err := strconv.Atoi(port)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
+	var err error
+	var portInt int
+	if port != "" {
+		portInt, err = strconv.Atoi(port)
+		if err != nil {
+			log.Println(err.Error())
+			return nil, err
+		}
 	}
 
 	if uri == "" {
