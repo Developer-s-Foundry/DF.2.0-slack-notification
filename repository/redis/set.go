@@ -42,9 +42,7 @@ func (r *RedisConn) Get(ctx context.Context, key string, receiver interface{}) e
 func (r *RedisConn) Del(key string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-
 	err := r.RConn.GetDel(ctx, key).Err()
-
 	if err != nil {
 		return fmt.Errorf("failed to delete key %q: %w", key, err)
 	}
